@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rainmaker Agent — Daily & Weekly Flow</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --accent: #4b8df8;
+      --text: #e8ebf0;
+      --muted: #a6b0c3;
+      --ok: #2ecc71;
+      --warn: #f39c12;
+      --bad: #e74c3c;
+      --card: #1b1f27;
+      --chip: #252a35;
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 70% -10%, #1a1e27 0%, var(--bg) 50%);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(180deg, rgba(15,17,21,.95), rgba(15,17,21,.6));
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #202533;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 18px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: conic-gradient(from 220deg, #4b8df8, #8f67ff, #ff6fb1, #4b8df8);
+      box-shadow: 0 0 0 3px #11151e inset;
+    }
+    h1 { font-size: 20px; margin: 0; letter-spacing: .3px; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    nav.tabs {
+      display: grid; grid-auto-flow: column; gap: 8px;
+      margin-top: 12px;
+    }
+    .tab {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--muted);
+      border: 1px solid #2a3040;
+      cursor: pointer;
+      user-select: none;
+      text-align: center;
+    }
+    .tab.active { background: #21304a; color: var(--text); border-color: #2f3e5b; }
+    main { padding: 20px 18px 40px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid #262b39;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .card h2 {
+      margin: 0 0 10px; font-size: 16px; letter-spacing: .2px;
+    }
+    .hint { color: var(--muted); font-size: 12px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .chipbtn {
+      padding: 8px 12px; border-radius: 10px; background: var(--chip);
+      border: 1px solid #2a3040; color: var(--text); cursor: pointer;
+    }
+    .chipbtn.primary { background: #1b2942; border-color: #2f3e5b; }
+    .list { display: grid; gap: 10px; }
+    .item {
+      display: grid; gap: 6px;
+      background: #161b24; border: 1px solid #232a3a;
+      padding: 12px; border-radius: 12px;
+    }
+    .item .title { font-weight: 600; }
+    .item .meta { color: var(--muted); font-size: 12px; }
+    .pill {
+      padding: 6px 10px; border-radius: 999px; background: #1f2532;
+      border: 1px solid #323a52; font-size: 12px; color: var(--muted);
+    }
+    .cols-8 { grid-column: span 8; }
+    .cols-4 { grid-column: span 4; }
+    .cols-6 { grid-column: span 6; }
+    .cols-12 { grid-column: span 12; }
+    @media (max-width: 900px) {
+      .cols-8, .cols-4, .cols-6, .cols-12 { grid-column: span 12; }
+    }
+    input[type="text"], input[type="time"], select, textarea {
+      width: 100%;
+      background: #0f141d;
+      color: var(--text);
+      border: 1px solid #2a3040;
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    .kpi {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
+    }
+    .kpi .k {
+      background: #121721; border: 1px solid #232a3a; border-radius: 12px;
+      padding: 12px;
+    }
+    .k .v { font-size: 20px; font-weight: 700; }
+    .k .l { font-size: 12px; color: var(--muted); }
+    footer {
+      text-align: center; color: var(--muted); font-size: 12px; padding: 30px 0 60px;
+    }
+    .switch {
+      position: relative; display: inline-block; width: 46px; height: 26px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0; background: #2a3040; border-radius: 26px;
+      transition: .2s;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 20px; width: 20px; left: 3px; top: 3px;
+      background: white; border-radius: 50%; transition: .2s;
+    }
+    input:checked + .slider { background: #2b4c93; }
+    input:checked + .slider:before { transform: translateX(20px); }
+    .small { font-size: 11px; color: var(--muted); }
+    .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 10px; border-bottom: 1px solid #242a39; text-align: left; }
+    .table th { color: var(--muted); font-weight: 600; }
+    .btn {
+      padding: 10px 14px; border-radius: 12px; border: 1px solid #2a3040;
+      background: #14213a; color: #dfe6f3; cursor: pointer;
+    }
+    .btn.secondary { background: #0f141d; }
+    .right { margin-left: auto; }
+    .notice {
+      padding: 12px 14px; border: 1px dashed #33415e; border-radius: 12px;
+      background: #141a25; color: var(--muted); font-size: 13px;
+    }
+  </style>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Rainmaker Agent</h1>
+          <div class="sub">Daily and Weekly Operating Flow • local only • MVP</div>
+        </div>
+      </div>
+      <nav class="tabs" role="tablist" aria-label="Main">
+        <div class="tab active" data-tab="daily" role="tab" aria-selected="true">Daily</div>
+        <div class="tab" data-tab="weekly" role="tab">Weekly</div>
+        <div class="tab" data-tab="agents" role="tab">Agents</div>
+        <div class="tab" data-tab="inbox" role="tab">Inbox</div>
+        <div class="tab" data-tab="settings" role="tab">Settings</div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <!-- DAILY -->
+      <section class="grid view" id="view-daily">
+        <div class="card cols-8">
+          <h2>Morning Pulse</h2>
+          <div class="kpi" id="kpis"></div>
+          <div class="list" id="morningPulse"></div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="btn-generate-pulse">Generate Pulse</button>
+            <button class="btn secondary" id="btn-complete-pulse">Mark Done</button>
+            <div class="right small" id="pulse-status"></div>
+          </div>
+        </div>
+        <div class="card cols-4">
+          <h2>Today</h2>
+          <div class="list" id="todayList"></div>
+          <div class="row" style="margin-top:10px;">
+            <input type="text" id="newTodo" placeholder="Add a quick task" />
+            <button class="btn" id="addTodo">Add</button>
+          </div>
+        </div>
+        <div class="card cols-12">
+          <h2>Evening Reset</h2>
+          <div class="row">
+            <label class="small">Emotional temperature</label>
+            <select id="mood">
+              <option value="Calm">Calm</option>
+              <option value="Focused">Focused</option>
+              <option value="Grateful">Grateful</option>
+              <option value="Stressed">Stressed</option>
+              <option value="Irritated">Irritated</option>
+            </select>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <textarea id="reflection" placeholder="One sentence on what stood out today"></textarea>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="saveReset">Save Reset</button>
+            <div class="right small" id="resetStatus"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WEEKLY -->
+      <section class="grid view" id="view-weekly" style="display:none;">
+        <div class="card cols-6">
+          <h2>Weekly Cadence</h2>
+          <table class="table" id="weeklyTable">
+            <thead>
+              <tr><th>Day</th><th>Focus</th><th>Enabled</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="notice" style="margin-top:10px;">
+            This mirrors your plan: Monday Finance, Tuesday Opportunities, Wednesday Growth, Thursday Fun, Friday Relationships, Saturday Health & Home, Sunday Reset.
+          </div>
+        </div>
+        <div class="card cols-6">
+          <h2>This Week’s Top 3</h2>
+          <div class="list" id="top3"></div>
+          <div class="row" style="margin-top:10px;">
+            <input type="text" id="newTop" placeholder="Add a priority" />
+            <button class="btn" id="addTop">Add</button>
+            <button class="btn secondary right" id="clearTop">Clear</button>
+          </div>
+        </div>
+        <div class="card cols-12">
+          <h2>Generated Brief</h2>
+          <div class="row">
+            <button class="btn" id="generateWeekly">Generate Weekly Brief</button>
+            <button class="btn secondary" id="exportData">Export Data</button>
+            <label class="btn secondary right">
+              Import <input type="file" id="importData" accept="application/json" hidden>
+            </label>
+          </div>
+          <div id="weeklyBrief" class="list" style="margin-top:10px;"></div>
+        </div>
+      </section>
+
+      <!-- AGENTS -->
+      <section class="grid view" id="view-agents" style="display:none;">
+        <div class="card cols-12">
+          <h2>Agents</h2>
+          <div class="list" id="agentsList"></div>
+        </div>
+      </section>
+
+      <!-- INBOX -->
+      <section class="grid view" id="view-inbox" style="display:none;">
+        <div class="card cols-12">
+          <h2>Inbox</h2>
+          <div class="hint">This is where generated nudges, alerts, and suggestions land. Clear them as you go.</div>
+          <div class="list" id="inboxList" style="margin-top:10px;"></div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="clearInbox">Clear Inbox</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="grid view" id="view-settings" style="display:none;">
+        <div class="card cols-6">
+          <h2>Profile</h2>
+          <div class="row"><input type="text" id="profileName" placeholder="Preferred Name"></div>
+          <div class="row" style="margin-top:10px;"><input type="text" id="profileCity" placeholder="City"></div>
+          <div class="row" style="margin-top:10px;"><input type="text" id="tz" placeholder="Timezone (e.g., America/Phoenix)"></div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="saveProfile">Save</button>
+            <div class="right small" id="profileStatus"></div>
+          </div>
+        </div>
+        <div class="card cols-6">
+          <h2>Daily Brief Timing</h2>
+          <div class="row">
+            <label class="small">Morning Pulse</label>
+            <input type="time" id="timeMorning" value="07:30" />
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <label class="small">Evening Reset</label>
+            <input type="time" id="timeEvening" value="20:30" />
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="saveTimes">Save</button>
+            <div class="right small" id="timeStatus"></div>
+          </div>
+        </div>
+        <div class="card cols-12">
+          <h2>Data</h2>
+          <div class="row">
+            <button class="btn secondary" id="resetAll">Reset Everything</button>
+            <div class="right small">Local only, stored in your browser via localStorage.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    v0.1 MVP • Client-side only • No accounts • Built for Rainmaker
+  </footer>
+
+  <script>
+    // --- Utilities
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => [...el.querySelectorAll(sel)];
+    const now = () => new Date();
+    const fmt = d => d.toLocaleString([], { hour: '2-digit', minute: '2-digit' });
+
+    // --- Storage
+    const store = {
+      get(key, fallback) {
+        try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+      },
+      set(key, val) { localStorage.setItem(key, JSON.stringify(val)); },
+      remove(key) { localStorage.removeItem(key); }
+    };
+
+    // --- Initial Data
+    const DEFAULT_WEEKLY = [
+      { day: 'Monday', focus: 'Financial Clarity', enabled: true },
+      { day: 'Tuesday', focus: 'Opportunity Scan', enabled: true },
+      { day: 'Wednesday', focus: 'Personal Growth', enabled: true },
+      { day: 'Thursday', focus: 'Fun & Life Planning', enabled: true },
+      { day: 'Friday', focus: 'Relationship Pulse', enabled: true },
+      { day: 'Saturday', focus: 'Health & Home', enabled: true },
+      { day: 'Sunday', focus: 'Reset & Vision', enabled: true },
+    ];
+
+    const DEFAULT_AGENTS = [
+      { key: 'money', name: 'Money Operator', on: true, desc: 'Watches cash flow, flags weird charges, surfaces one optimization.' },
+      { key: 'house', name: 'Household Chief', on: true, desc: 'Keeps maintenance, supplies, and contractors in rhythm.' },
+      { key: 'growth', name: 'Personal Growth Engine', on: true, desc: 'Daily 10-min lesson and monthly reflection.' },
+      { key: 'rel', name: 'Relationship Wingman', on: true, desc: 'Birthdays, thoughtful messages, date ideas, patterns.' },
+      { key: 'health', name: 'Health Quarterback', on: true, desc: 'Labs, meds, workouts, and simple daily health brief.' },
+      { key: 'venture', name: 'Side Venture Accelerator', on: true, desc: 'Ideas, market scans, pre-meeting briefs, intros.' },
+      { key: 'fun', name: 'Fun Director', on: true, desc: 'Weekend options, reservations, and micro adventures.' },
+    ];
+
+    // --- State
+    let weekly = store.get('weekly', DEFAULT_WEEKLY);
+    let top3 = store.get('top3', []);
+    let inbox = store.get('inbox', []);
+    let todos = store.get('todos', []);
+    let agents = store.get('agents', DEFAULT_AGENTS);
+    let profile = store.get('profile', { name: 'Rainmaker', city: '', tz: 'America/Phoenix' });
+    let times = store.get('times', { morning: '07:30', evening: '20:30' });
+    let lastPulseDate = store.get('lastPulse', '');
+
+    // --- Tabs
+    $$('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        $$('.tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        $$('.view').forEach(v => v.style.display = 'none');
+        $('#view-' + t.dataset.tab).style.display = 'grid';
+      });
+    });
+
+    // --- Agents list
+    function renderAgents() {
+      const wrap = $('#agentsList');
+      wrap.innerHTML = '';
+      agents.forEach(a => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <div>
+              <div class="title">${a.name}</div>
+              <div class="meta">${a.desc}</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" ${a.on ? 'checked' : ''} data-key="${a.key}">
+              <span class="slider"></span>
+            </label>
+          </div>
+        `;
+        wrap.appendChild(item);
+      });
+      $$('#agentsList input[type="checkbox"]').forEach(ch => {
+        ch.addEventListener('change', e => {
+          const k = e.target.dataset.key;
+          const idx = agents.findIndex(a => a.key === k);
+          if (idx >= 0) { agents[idx].on = e.target.checked; store.set('agents', agents); }
+        });
+      });
+    }
+
+    // --- Weekly table
+    function renderWeeklyTable() {
+      const tb = $('#weeklyTable tbody');
+      tb.innerHTML = '';
+      weekly.forEach((w, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${w.day}</td>
+          <td><input type="text" value="${w.focus}" data-i="${i}" class="wfocus"></td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" ${w.enabled ? 'checked' : ''} data-i="${i}" class="wenabled">
+              <span class="slider"></span>
+            </label>
+          </td>
+        `;
+        tb.appendChild(tr);
+      });
+      $$('.wfocus').forEach(inp => {
+        inp.addEventListener('input', e => {
+          const i = +e.target.dataset.i;
+          weekly[i].focus = e.target.value;
+          store.set('weekly', weekly);
+        });
+      });
+      $$('.wenabled').forEach(inp => {
+        inp.addEventListener('change', e => {
+          const i = +e.target.dataset.i;
+          weekly[i].enabled = e.target.checked;
+          store.set('weekly', weekly);
+        });
+      });
+    }
+
+    // --- Top 3
+    function renderTop3() {
+      const list = $('#top3');
+      list.innerHTML = '';
+      top3.forEach((t, i) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div class="pill">${t}</div>
+          <button class="chipbtn" data-i="${i}">Remove</button>
+        `;
+        list.appendChild(row);
+      });
+      $$('#top3 .chipbtn').forEach(b => b.addEventListener('click', e => {
+        const i = +e.target.dataset.i;
+        top3.splice(i,1);
+        store.set('top3', top3);
+        renderTop3();
+      }));
+    }
+    $('#addTop').addEventListener('click', () => {
+      const v = $('#newTop').value.trim();
+      if (!v) return;
+      top3.push(v);
+      store.set('top3', top3);
+      $('#newTop').value='';
+      renderTop3();
+    });
+    $('#clearTop').addEventListener('click', () => { top3 = []; store.set('top3', top3); renderTop3(); });
+
+    // --- Today list
+    function renderTodos() {
+      const list = $('#todayList');
+      list.innerHTML = '';
+      todos.forEach((t, i) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <div><span class="title">${t.text}</span><div class="meta">${t.added}</div></div>
+            <div class="row">
+              <button class="chipbtn" data-action="done" data-i="${i}">Done</button>
+              <button class="chipbtn" data-action="del" data-i="${i}">Delete</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+      $$('#todayList .chipbtn').forEach(b => b.addEventListener('click', e => {
+        const i = +e.target.dataset.i;
+        const action = e.target.dataset.action;
+        if (action === 'done') {
+          inbox.push({ ts: now().toISOString(), title: 'Completed', body: todos[i].text });
+          store.set('inbox', inbox);
+          todos.splice(i,1);
+        } else {
+          todos.splice(i,1);
+        }
+        store.set('todos', todos);
+        renderTodos();
+        renderInbox();
+      }));
+    }
+    $('#addTodo').addEventListener('click', () => {
+      const v = $('#newTodo').value.trim();
+      if (!v) return;
+      todos.push({ text: v, added: new Date().toLocaleString() });
+      store.set('todos', todos);
+      $('#newTodo').value='';
+      renderTodos();
+    });
+
+    // --- Inbox
+    function renderInbox() {
+      const list = $('#inboxList');
+      list.innerHTML = '';
+      if (!inbox.length) {
+        list.innerHTML = '<div class="hint">Empty. Your agents will drop notes here.</div>';
+        return;
+      }
+      inbox.slice().reverse().forEach((m, idx) => {
+        const it = document.createElement('div');
+        it.className = 'item';
+        it.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <div>
+              <div class="title">${m.title}</div>
+              <div class="meta">${new Date(m.ts).toLocaleString()}</div>
+            </div>
+            <button class="chipbtn" data-i="${inbox.length-1-idx}">Clear</button>
+          </div>
+          <div>${m.body}</div>
+        `;
+        list.appendChild(it);
+      });
+      $$('#inboxList .chipbtn').forEach(b => b.addEventListener('click', e => {
+        const i = +e.target.dataset.i;
+        inbox.splice(i,1);
+        store.set('inbox', inbox);
+        renderInbox();
+      }));
+    }
+    $('#clearInbox').addEventListener('click', () => { inbox = []; store.set('inbox', inbox); renderInbox(); });
+
+    // --- Profile / settings
+    function loadProfileForm() {
+      $('#profileName').value = profile.name || '';
+      $('#profileCity').value = profile.city || '';
+      $('#tz').value = profile.tz || '';
+      $('#timeMorning').value = times.morning || '07:30';
+      $('#timeEvening').value = times.evening || '20:30';
+    }
+    $('#saveProfile').addEventListener('click', () => {
+      profile = {
+        name: $('#profileName').value.trim() || 'Rainmaker',
+        city: $('#profileCity').value.trim(),
+        tz: $('#tz').value.trim() || 'America/Phoenix',
+      };
+      store.set('profile', profile);
+      $('#profileStatus').textContent = 'Saved ✓';
+      setTimeout(()=>$('#profileStatus').textContent='',1500);
+    });
+    $('#saveTimes').addEventListener('click', () => {
+      times = { morning: $('#timeMorning').value, evening: $('#timeEvening').value };
+      store.set('times', times);
+      $('#timeStatus').textContent = 'Saved ✓';
+      setTimeout(()=>$('#timeStatus').textContent='',1500);
+    });
+    $('#resetAll').addEventListener('click', () => {
+      if (!confirm('Reset all data?')) return;
+      ['weekly','top3','inbox','todos','agents','profile','times','lastPulse'].forEach(k => store.remove(k));
+      location.reload();
+    });
+
+    // --- Morning Pulse generator (mock logic)
+    function generatePulse() {
+      const kpis = $('#kpis');
+      const mp = $('#morningPulse');
+      const rng = Math.random;
+      const moneyDelta = (Math.round((rng()*2-1) * 2000));
+      const sleep = 6 + Math.round(rng()*3);
+      const house = ['AC filter due next week','All good','Packages arriving today'][Math.floor(rng()*3)];
+      const person = ['Text Piper a quick win','Call Mom for 10 minutes','Date idea for Lila: new sushi spot'][Math.floor(rng()*3)];
+      const micro = ['2-minute stretch','Inbox sweep 5 emails','Drink water before coffee'][Math.floor(rng()*3)];
+
+      kpis.innerHTML = `
+        <div class="k"><div class="v ${moneyDelta>0?'ok':moneyDelta<0?'bad':''}">${moneyDelta>=0?'+':''}${moneyDelta}</div><div class="l">Money movement</div></div>
+        <div class="k"><div class="v">${sleep}h</div><div class="l">Sleep (est.)</div></div>
+        <div class="k"><div class="v">Phoenix</div><div class="l">Timezone: ${profile.tz}</div></div>
+      `;
+      mp.innerHTML = '';
+      [
+        { label: 'Money', text: moneyDelta >= 1000 ? 'Large incoming transfer spotted.' :
+                               moneyDelta <= -1000 ? 'Large outgoing payment spotted.' : 'No unusual transactions.' },
+        { label: 'Health', text: sleep < 7 ? 'Keep workout easy today.' : 'Green light for a solid session.' },
+        { label: 'Home', text: house },
+        { label: 'People', text: person },
+        { label: 'Micro-win', text: micro }
+      ].forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `<div class="title">${item.label}</div><div>${item.text}</div>`;
+        mp.appendChild(el);
+      });
+
+      // Drop a note in inbox
+      inbox.push({ ts: now().toISOString(), title: 'Morning Pulse generated', body: 'Daily snapshot created.' });
+      store.set('inbox', inbox);
+      renderInbox();
+
+      lastPulseDate = new Date().toDateString();
+      store.set('lastPulse', lastPulseDate);
+      $('#pulse-status').textContent = 'Generated ✓';
+      setTimeout(()=>$('#pulse-status').textContent='',1500);
+    }
+    $('#btn-generate-pulse').addEventListener('click', generatePulse);
+    $('#btn-complete-pulse').addEventListener('click', () => {
+      inbox.push({ ts: now().toISOString(), title: 'Pulse complete', body: 'You checked your morning pulse.' });
+      store.set('inbox', inbox);
+      renderInbox();
+      $('#pulse-status').textContent = 'Marked done ✓';
+      setTimeout(()=>$('#pulse-status').textContent='',1500);
+    });
+
+    // Auto-generate once per day when opening the app
+    window.addEventListener('load', () => {
+      if (store.get('lastPulse','') !== new Date().toDateString()) {
+        generatePulse();
+      }
+    });
+
+    // --- Weekly Brief generator (mock logic)
+    function generateWeeklyBrief() {
+      const out = $('#weeklyBrief');
+      out.innerHTML = '';
+      weekly.filter(w=>w.enabled).forEach(w => {
+        const it = document.createElement('div');
+        it.className = 'item';
+        const body = {
+          'Financial Clarity': 'Cash flow snapshot, weird charges, one optimization.',
+          'Opportunity Scan': 'New leads, outreach targets, and a prep brief.',
+          'Personal Growth': '10-min lesson + small challenge.',
+          'Fun & Life Planning': 'Two weekend options with reservations ready.',
+          'Relationship Pulse': 'Two texts to send and one date idea.',
+          'Health & Home': 'Maintenance checklist + simple meal plan.',
+          'Reset & Vision': 'Wins, tweaks, next week top 3.'
+        }[w.focus] || 'Planned actions for the day.';
+        it.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <div><div class="title">${w.day} — ${w.focus}</div><div class="meta">Auto-plan</div></div>
+            <button class="chipbtn" data-day="${w.day}">Push to Inbox</button>
+          </div>
+          <div>${body}</div>
+        `;
+        out.appendChild(it);
+      });
+      $$('#weeklyBrief .chipbtn').forEach(b => b.addEventListener('click', e => {
+        const day = e.target.dataset.day;
+        const body = e.target.closest('.item').querySelector('div:nth-child(3)').textContent;
+        inbox.push({ ts: now().toISOString(), title: `${day} Plan`, body });
+        store.set('inbox', inbox);
+        renderInbox();
+      }));
+    }
+    $('#generateWeekly').addEventListener('click', generateWeeklyBrief);
+
+    // --- Export/Import
+    $('#exportData').addEventListener('click', () => {
+      const payload = {
+        weekly, top3, inbox, todos, agents, profile, times, lastPulseDate
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'rainmaker-agent-data.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+    $('#importData').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        const data = JSON.parse(text);
+        weekly = data.weekly ?? weekly;
+        top3 = data.top3 ?? top3;
+        inbox = data.inbox ?? inbox;
+        todos = data.todos ?? todos;
+        agents = data.agents ?? agents;
+        profile = data.profile ?? profile;
+        times = data.times ?? times;
+        lastPulseDate = data.lastPulseDate ?? lastPulseDate;
+        store.set('weekly', weekly);
+        store.set('top3', top3);
+        store.set('inbox', inbox);
+        store.set('todos', todos);
+        store.set('agents', agents);
+        store.set('profile', profile);
+        store.set('times', times);
+        store.set('lastPulse', lastPulseDate);
+        renderAll();
+        alert('Imported ✓');
+      } catch(err) { alert('Import failed'); }
+    });
+
+    // --- KPIs placeholder
+    function renderKPIs() {
+      $('#kpis').innerHTML = `
+        <div class="k"><div class="v">—</div><div class="l">Money movement</div></div>
+        <div class="k"><div class="v">—</div><div class="l">Sleep</div></div>
+        <div class="k"><div class="v">${profile.city || 'Phoenix'}</div><div class="l">Timezone: ${profile.tz}</div></div>
+      `;
+    }
+
+    function renderDaily() {
+      renderKPIs();
+      renderTodos();
+      $('#pulse-status').textContent = '';
+      $('#resetStatus').textContent = '';
+    }
+
+    // Evening reset save
+    $('#saveReset').addEventListener('click', () => {
+      const mood = $('#mood').value;
+      const note = $('#reflection').value.trim();
+      inbox.push({ ts: now().toISOString(), title: 'Evening Reset saved', body: `Mood: ${mood}. ${note ? 'Note: '+note : ''}` });
+      store.set('inbox', inbox);
+      renderInbox();
+      $('#reflection').value='';
+      $('#resetStatus').textContent = 'Saved ✓';
+      setTimeout(()=>$('#resetStatus').textContent='',1500);
+    });
+
+    function renderAll() {
+      renderAgents();
+      renderWeeklyTable();
+      renderTop3();
+      renderInbox();
+      loadProfileForm();
+      renderDaily();
+    }
+
+    renderAll();
+  
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js');
+    });
+  }
+
+</script>
+</body>
+</html>
